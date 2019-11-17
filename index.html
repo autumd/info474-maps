@@ -1,0 +1,113 @@
+<html>
+<head>
+  <title>Maps</title>
+  <script src='https://d3js.org/d3.v4.min.js'></script>
+  <script src='map.js'></script>
+  <script src="points_json.js"></script>
+  <script src='neighborhoods.js'></script>
+
+
+
+  <!-- <style>
+        html, body{
+          margin: 0;
+        }
+        #map path{ stroke: #ccc; stroke-width: .5; }
+        #map defs path{ stroke: none; }
+        #map path.highlight{ stroke: black; stroke-width: 1;}
+        #map path.ocean{ fill: #bbd4e3; stroke:none;}
+        #map #graticule path{ stroke: #a6c0d0; fill: none; stroke-width: 1;}
+        #map #chapters path{ fill: red; }
+        #map path#title-path{ fill: none; stroke:none; }
+        #title-text{
+          font: 30px Helvetica, Arial, sans-serif;
+        }
+      </style> -->
+</head>
+<body>
+        <!-- <script src="map.js"></script> -->
+  <script>
+      
+
+    var width = 700,
+        height = 580;
+
+    var svg = d3.select('body')
+    .append('svg')
+    .attr('width', width)
+    .attr('height', height);
+
+    var neighborhoods = svg.append('g');
+
+    var albersProjection = d3.geoAlbers()
+    .scale(190000)
+    .rotate([71.057, 0])
+    .center([0, 42.313])
+    .translate([width/2, height/2]);
+
+
+    var geoPath = d3.geoPath()
+    .projection(albersProjection);
+
+    neighborhoods.selectAll('path')
+    .data(neighborhoods_json.features)
+    .enter()
+    .append('path')
+    .attr('fill', '#ccc')
+    .attr('d', geoPath);
+
+    var points = svg.append('g');
+
+    points.selectAll('path')
+        .data(points_json.features)
+        .enter()
+        .append('path')
+        //.attr('stroke', 'blue')
+        .attr('d', geoPath)
+        .attr('fill', 'red')
+
+    var s = [];
+
+    for (let a = 0; a < points_json.features.length - 1; a++ ) {
+        const r = albersProjection(points_json.features[a].geometry.coordinates),
+        n = albersProjection(points_json.features[a + 1].geometry.coordinates);
+
+        s.push({ type: "LineString", coordinates: [[r[0], r[1]], [n[0], n[1]]] })
+    }
+
+    const r = svg.append("g");
+
+    r.selectAll("line")
+        .data(s)
+        .enter()
+        .append('line')
+        .attr("x1", t => t.coordinates[0][0])
+        .attr("y1", t => t.coordinates[0][1])
+        .attr("x2", t => t.coordinates[1][0])
+        .attr("y2", t => t.coordinates[1][1])
+        .attr('id', function (t, e) {
+            return "line" + e
+        })
+        .attr("stroke", "steelblue"), 
+        r.selectAll("line")
+            .style("opacity", 0)
+        d3.selectAll("line")
+            .style("opacity", "1")
+        d3.selectAll("line")
+            .each(function (t, e) {
+                let a = d3.select("#line" + e).node().getTotalLength();
+                d3.select("#line" + e)
+                    .attr("stroke-dasharray", a + " " + a)
+                    .attr("stroke-dashoffset", a)
+                    .transition()
+                    .duration(500)
+                    .delay(250 * e)
+                    .ease(d3.easeLinear)
+                    .attr("stroke-dashoffset", 0)
+                    .style("stroke-width", 3)
+            })
+
+    
+
+    </script>
+</body>
